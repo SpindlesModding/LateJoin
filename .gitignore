@@ -32,6 +32,8 @@ bld/
 [Ll]og/
 [Ll]ogs/
 
+.idea/*
+
 LateJoin/LateJoin.csproj
 
 # Visual Studio 2015/2017 cache/options directory

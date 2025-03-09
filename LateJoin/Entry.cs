@@ -2,9 +2,10 @@
 using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
-using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
 using Photon.Pun;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace LateJoin
 {
@@ -32,21 +33,18 @@ namespace LateJoin
             PhotonNetwork.CurrentRoom.IsOpen = canJoin;
         }
 
-        private static void LevelGenerator_PlayerSpawnILHook(ILContext il)
+        private static void PlayerAvatar_SpawnHook(Action<PlayerAvatar, Vector3, Quaternion> orig, PlayerAvatar self, Vector3 position, Quaternion rotation)
         {
-            var cursor = new ILCursor(il);
-
-            cursor.GotoNext(instruction => instruction.MatchStloc(7), instruction => instruction.MatchLdsfld<GameDirector>("instance"));
-
-            cursor.Index++;
-
-            cursor.RemoveRange(36);
+            if ((bool) AccessTools.Field(typeof(PlayerAvatar), "spawned").GetValue(self))
+                return;
+            
+            orig.Invoke(self, position, rotation);
         }
         
         private void Awake()
         {
             new Hook(AccessTools.Method(typeof(RunManager), "ChangeLevel"), RunManager_ChangeLevelHook);
-            new ILHook(AccessTools.Method(typeof(LevelGenerator), "PlayerSpawn"), LevelGenerator_PlayerSpawnILHook);
+            new Hook(AccessTools.Method(typeof(PlayerAvatar), "Spawn"), PlayerAvatar_SpawnHook);
         }
     }
 }
