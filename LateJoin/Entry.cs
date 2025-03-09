@@ -4,6 +4,8 @@ using BepInEx.Logging;
 using HarmonyLib;
 using MonoMod.RuntimeDetour;
 using Photon.Pun;
+using Steamworks;
+using Steamworks.Data;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -40,11 +42,33 @@ namespace LateJoin
             
             orig.Invoke(self, position, rotation);
         }
+
+        private static async void SteamManager_OnGameLobbyJoinRequestedHook(SteamManager self, Lobby _lobby, SteamId _steamID)
+        {
+            var currentLobby = (Lobby) AccessTools.Field(typeof(SteamManager), "currentLobby").GetValue(self);
+            
+            if (_lobby.Id == currentLobby.Id)
+            {
+                Debug.Log("Steam: Already in this lobby.");
+            }
+            else
+            {
+                Debug.Log("Steam: Game lobby join requested: " + _lobby.Id);
+                
+                await SteamMatchmaking.JoinLobbyAsync(_lobby.Id);
+                
+                AccessTools.Field(typeof(RunManager), "lobbyJoin").SetValue(RunManager.instance, true);
+                RunManager.instance.ChangeLevel(true, false);
+                
+                AccessTools.Field(typeof(SteamManager), "joinLobby").SetValue(self, true);
+            }
+        }
         
         private void Awake()
         {
             new Hook(AccessTools.Method(typeof(RunManager), "ChangeLevel"), RunManager_ChangeLevelHook);
             new Hook(AccessTools.Method(typeof(PlayerAvatar), "Spawn"), PlayerAvatar_SpawnHook);
+            new Hook(AccessTools.Method(typeof(SteamManager), "OnGameLobbyJoinRequested"), SteamManager_OnGameLobbyJoinRequestedHook);
         }
     }
 }
