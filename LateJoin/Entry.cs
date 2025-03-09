@@ -7,7 +7,6 @@ using Photon.Pun;
 using Steamworks;
 using Steamworks.Data;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace LateJoin
 {
@@ -33,6 +32,11 @@ namespace LateJoin
                 SteamManager.instance.LockLobby();
             
             PhotonNetwork.CurrentRoom.IsOpen = canJoin;
+
+            var runManagerPUN = AccessTools.Field(typeof(RunManager), "runManagerPUN").GetValue(self);
+            var photonView = AccessTools.Field(typeof(RunManagerPUN), "photonView").GetValue(runManagerPUN) as PhotonView;
+            
+            PhotonNetwork.RemoveBufferedRPCs(photonView!.ViewID);
         }
 
         private static void PlayerAvatar_SpawnHook(Action<PlayerAvatar, Vector3, Quaternion> orig, PlayerAvatar self, Vector3 position, Quaternion rotation)
@@ -63,12 +67,29 @@ namespace LateJoin
                 AccessTools.Field(typeof(SteamManager), "joinLobby").SetValue(self, true);
             }
         }
+
+        private static void LevelGenerator_StartHook(Action<LevelGenerator> orig, LevelGenerator self)
+        {
+            if (PhotonNetwork.IsMasterClient)
+                PhotonNetwork.RemoveBufferedRPCs(self.PhotonView.ViewID);
+            
+            orig.Invoke(self);
+        }
         
         private void Awake()
         {
+            
+            logger.LogDebug("Hooking `RunManager.ChangeLevel`");
             new Hook(AccessTools.Method(typeof(RunManager), "ChangeLevel"), RunManager_ChangeLevelHook);
+            
+            logger.LogDebug("Hooking `PlayerAvatar.Spawn`");
             new Hook(AccessTools.Method(typeof(PlayerAvatar), "Spawn"), PlayerAvatar_SpawnHook);
+            
+            logger.LogDebug("Hooking `SteamManager.OnGameLobbyJoinRequested`");
             new Hook(AccessTools.Method(typeof(SteamManager), "OnGameLobbyJoinRequested"), SteamManager_OnGameLobbyJoinRequestedHook);
+            
+            logger.LogDebug("Hooking `LevelGenerator.Start`");
+            new Hook(AccessTools.Method(typeof(LevelGenerator), "Start"), LevelGenerator_StartHook);
         }
     }
 }
