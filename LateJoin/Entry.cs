@@ -1,11 +1,11 @@
 ﻿using System;
 using BepInEx;
 using BepInEx.Logging;
+using ExitGames.Client.Photon;
 using HarmonyLib;
 using MonoMod.RuntimeDetour;
 using Photon.Pun;
-using Steamworks;
-using Steamworks.Data;
+using Photon.Realtime;
 using UnityEngine;
 
 namespace LateJoin
@@ -19,12 +19,28 @@ namespace LateJoin
 
         private static void RunManager_ChangeLevelHook(Action<RunManager, bool, bool, RunManager.ChangeLevelType> orig, RunManager self, bool _completedLevel, bool _levelFailed, RunManager.ChangeLevelType _changeLevelType)
         {
-            orig.Invoke(self, _completedLevel, _levelFailed, _changeLevelType);
-            
             if (_levelFailed || !PhotonNetwork.IsMasterClient)
+            {
+                orig.Invoke(self, _completedLevel, _levelFailed, _changeLevelType);
                 return;
+            }
+            
+            var runManagerPUN = AccessTools.Field(typeof(RunManager), "runManagerPUN").GetValue(self);
+            var runManagerPhotonView = AccessTools.Field(typeof(RunManagerPUN), "photonView").GetValue(runManagerPUN) as PhotonView;
+            
+            PhotonNetwork.RemoveBufferedRPCs(runManagerPhotonView!.ViewID);
 
-            var canJoin = SemiFunc.RunIsLobby() || SemiFunc.RunIsLobbyMenu(); 
+            foreach (var photonView in FindObjectsOfType<PhotonView>())
+            {
+                if (photonView.gameObject.scene.buildIndex == -1)
+                    continue;
+                    
+                RemoveFromPhotonCache(photonView);
+            }
+            
+            orig.Invoke(self, _completedLevel, true, _changeLevelType);
+            
+            var canJoin = SemiFunc.RunIsLobbyMenu() || SemiFunc.RunIsShop() || SemiFunc.RunIsLobby(); 
             
             if (canJoin)
                 SteamManager.instance.UnlockLobby();
@@ -32,11 +48,6 @@ namespace LateJoin
                 SteamManager.instance.LockLobby();
             
             PhotonNetwork.CurrentRoom.IsOpen = canJoin;
-
-            var runManagerPUN = AccessTools.Field(typeof(RunManager), "runManagerPUN").GetValue(self);
-            var photonView = AccessTools.Field(typeof(RunManagerPUN), "photonView").GetValue(runManagerPUN) as PhotonView;
-            
-            PhotonNetwork.RemoveBufferedRPCs(photonView!.ViewID);
         }
 
         private static void PlayerAvatar_SpawnHook(Action<PlayerAvatar, Vector3, Quaternion> orig, PlayerAvatar self, Vector3 position, Quaternion rotation)
@@ -46,50 +57,53 @@ namespace LateJoin
             
             orig.Invoke(self, position, rotation);
         }
-
-        private static async void SteamManager_OnGameLobbyJoinRequestedHook(SteamManager self, Lobby _lobby, SteamId _steamID)
-        {
-            var currentLobby = (Lobby) AccessTools.Field(typeof(SteamManager), "currentLobby").GetValue(self);
-            
-            if (_lobby.Id == currentLobby.Id)
-            {
-                Debug.Log("Steam: Already in this lobby.");
-            }
-            else
-            {
-                Debug.Log("Steam: Game lobby join requested: " + _lobby.Id);
-                
-                await SteamMatchmaking.JoinLobbyAsync(_lobby.Id);
-                
-                AccessTools.Field(typeof(RunManager), "lobbyJoin").SetValue(RunManager.instance, true);
-                RunManager.instance.ChangeLevel(true, false);
-                
-                AccessTools.Field(typeof(SteamManager), "joinLobby").SetValue(self, true);
-            }
-        }
-
+        
         private static void LevelGenerator_StartHook(Action<LevelGenerator> orig, LevelGenerator self)
         {
-            if (PhotonNetwork.IsMasterClient)
+            if (PhotonNetwork.IsMasterClient || SemiFunc.RunIsShop() || SemiFunc.RunIsLobby())
                 PhotonNetwork.RemoveBufferedRPCs(self.PhotonView.ViewID);
             
             orig.Invoke(self);
         }
         
+        private static void PlayerAvatar_StartHook(Action<PlayerAvatar> orig, PlayerAvatar self)
+        {
+            orig.Invoke(self);
+            
+            if (!PhotonNetwork.IsMasterClient || !SemiFunc.RunIsShop() && !SemiFunc.RunIsLobby())
+                return;
+            
+            self.photonView.RPC("LoadingLevelAnimationCompletedRPC", RpcTarget.AllBuffered);
+        }
+
+        private static void RemoveFromPhotonCache(PhotonView photonView)
+        {
+            var removeFilter = AccessTools.Field(typeof(PhotonNetwork), "removeFilter").GetValue(null) as Hashtable;
+            var keyByteSeven = AccessTools.Field(typeof(PhotonNetwork), "keyByteSeven").GetValue(null);
+            var serverCleanOptions = AccessTools.Field(typeof(PhotonNetwork), "ServerCleanOptions").GetValue(null) as RaiseEventOptions;
+            var raiseEventInternal = AccessTools.Method(typeof(PhotonNetwork), "RaiseEventInternal");
+ 
+            removeFilter![keyByteSeven] = photonView.InstantiationId;
+            serverCleanOptions!.CachingOption = EventCaching.RemoveFromRoomCache;
+            raiseEventInternal.Invoke(null, [(byte) 202, removeFilter, serverCleanOptions, SendOptions.SendReliable]);
+        }
+        
         private void Awake()
         {
-            
             logger.LogDebug("Hooking `RunManager.ChangeLevel`");
             new Hook(AccessTools.Method(typeof(RunManager), "ChangeLevel"), RunManager_ChangeLevelHook);
             
             logger.LogDebug("Hooking `PlayerAvatar.Spawn`");
             new Hook(AccessTools.Method(typeof(PlayerAvatar), "Spawn"), PlayerAvatar_SpawnHook);
-            
-            logger.LogDebug("Hooking `SteamManager.OnGameLobbyJoinRequested`");
-            new Hook(AccessTools.Method(typeof(SteamManager), "OnGameLobbyJoinRequested"), SteamManager_OnGameLobbyJoinRequestedHook);
+
+            logger.LogDebug("Hooking `LevelGenerator.Start`");
+            new Hook(AccessTools.Method(typeof(LevelGenerator), "Start"), LevelGenerator_StartHook);
             
             logger.LogDebug("Hooking `LevelGenerator.Start`");
             new Hook(AccessTools.Method(typeof(LevelGenerator), "Start"), LevelGenerator_StartHook);
+            
+            logger.LogDebug("Hooking `PlayerAvatar.Start`");
+            new Hook(AccessTools.Method(typeof(PlayerAvatar), "Start"), PlayerAvatar_StartHook);
         }
     }
 }
