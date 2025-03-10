@@ -34,8 +34,8 @@ namespace LateJoin
             {
                 if (photonView.gameObject.scene.buildIndex == -1)
                     continue;
-                    
-                RemoveFromPhotonCache(photonView);
+                
+                ClearPhotonCache(photonView);
             }
             
             orig.Invoke(self, _completedLevel, false, _changeLevelType);
@@ -75,14 +75,30 @@ namespace LateJoin
             
             self.photonView.RPC("LoadingLevelAnimationCompletedRPC", RpcTarget.AllBuffered);
         }
+        
+        private static void PlayerAvatar_OnDestroyHook(Action<PlayerAvatar> orig, PlayerAvatar self)
+        {
+            orig.Invoke(self);
 
-        private static void RemoveFromPhotonCache(PhotonView photonView)
+            if (!PhotonNetwork.IsMasterClient || !SemiFunc.RunIsShop() && !SemiFunc.RunIsLobby())
+                return;
+            
+            foreach (var photonView in FindObjectsOfType<PhotonView>())
+            {
+                if (photonView?.transform.parent && photonView.transform.parent.name is not "Enemies")
+                    continue;
+                
+                ClearPhotonCache(photonView);
+            }
+        }
+
+        private static void ClearPhotonCache(PhotonView photonView)
         {
             var removeFilter = AccessTools.Field(typeof(PhotonNetwork), "removeFilter").GetValue(null) as Hashtable;
             var keyByteSeven = AccessTools.Field(typeof(PhotonNetwork), "keyByteSeven").GetValue(null);
             var serverCleanOptions = AccessTools.Field(typeof(PhotonNetwork), "ServerCleanOptions").GetValue(null) as RaiseEventOptions;
             var raiseEventInternal = AccessTools.Method(typeof(PhotonNetwork), "RaiseEventInternal");
- 
+            
             removeFilter![keyByteSeven] = photonView.InstantiationId;
             serverCleanOptions!.CachingOption = EventCaching.RemoveFromRoomCache;
             raiseEventInternal.Invoke(null, [(byte) 202, removeFilter, serverCleanOptions, SendOptions.SendReliable]);
@@ -99,11 +115,11 @@ namespace LateJoin
             logger.LogDebug("Hooking `LevelGenerator.Start`");
             new Hook(AccessTools.Method(typeof(LevelGenerator), "Start"), LevelGenerator_StartHook);
             
-            logger.LogDebug("Hooking `LevelGenerator.Start`");
-            new Hook(AccessTools.Method(typeof(LevelGenerator), "Start"), LevelGenerator_StartHook);
-            
             logger.LogDebug("Hooking `PlayerAvatar.Start`");
             new Hook(AccessTools.Method(typeof(PlayerAvatar), "Start"), PlayerAvatar_StartHook);
+            
+            logger.LogDebug("Hooking `PlayerAvatar.OnDestroy`");
+            new Hook(AccessTools.Method(typeof(PlayerAvatar), "OnDestroy"), PlayerAvatar_OnDestroyHook);
         }
     }
 }
