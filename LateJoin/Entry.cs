@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace LateJoin
 {
-    [BepInPlugin("exciseman.latejoin", MOD_NAME, "1.0.0")]
+    [BepInPlugin("rebateman.latejoin", MOD_NAME, "0.1.0")]
     internal sealed class Entry : BaseUnityPlugin
     {
         private const string MOD_NAME = "Late Join";
@@ -40,7 +40,7 @@ namespace LateJoin
             
             orig.Invoke(self, _completedLevel, false, _changeLevelType);
             
-            var canJoin = SemiFunc.RunIsLobbyMenu() || SemiFunc.RunIsShop() || SemiFunc.RunIsLobby(); 
+            var canJoin = SemiFunc.RunIsLobbyMenu() || SemiFunc.RunIsLobby(); // SemiFunc.RunIsShop()
             
             if (canJoin)
                 SteamManager.instance.UnlockLobby();
@@ -60,7 +60,7 @@ namespace LateJoin
         
         private static void LevelGenerator_StartHook(Action<LevelGenerator> orig, LevelGenerator self)
         {
-            if (PhotonNetwork.IsMasterClient || SemiFunc.RunIsShop() || SemiFunc.RunIsLobby())
+            if (PhotonNetwork.IsMasterClient || SemiFunc.RunIsLobby()) // SemiFunc.RunIsShop()
                 PhotonNetwork.RemoveBufferedRPCs(self.PhotonView.ViewID);
             
             orig.Invoke(self);
@@ -70,7 +70,7 @@ namespace LateJoin
         {
             orig.Invoke(self);
 
-            if (!PhotonNetwork.IsMasterClient || !SemiFunc.RunIsShop())
+            if (!PhotonNetwork.IsMasterClient // !SemiFunc.RunIsShop())
                 return;
             
             self.photonView.RPC("LoadingLevelAnimationCompletedRPC", RpcTarget.AllBuffered);
@@ -80,7 +80,7 @@ namespace LateJoin
         {
             orig.Invoke(self);
 
-            if (!PhotonNetwork.IsMasterClient || !SemiFunc.RunIsShop() && !SemiFunc.RunIsLobby())
+            if (!PhotonNetwork.IsMasterClient || !SemiFunc.RunIsLobby()) // && !SemiFunc.RunIsShop()
                 return;
             
             foreach (var photonView in FindObjectsOfType<PhotonView>())
