@@ -69,8 +69,8 @@ namespace LateJoin
         private static void PlayerAvatar_StartHook(Action<PlayerAvatar> orig, PlayerAvatar self)
         {
             orig.Invoke(self);
-            
-            if (!PhotonNetwork.IsMasterClient || !SemiFunc.RunIsShop() && !SemiFunc.RunIsLobby())
+
+            if (!PhotonNetwork.IsMasterClient || !SemiFunc.RunIsShop())
                 return;
             
             self.photonView.RPC("LoadingLevelAnimationCompletedRPC", RpcTarget.AllBuffered);
