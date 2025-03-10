@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace LateJoin
 {
-    [BepInPlugin("nickklmao.latejoin", MOD_NAME, "1.0.0")]
+    [BepInPlugin("exciseman.latejoin", MOD_NAME, "1.0.0")]
     internal sealed class Entry : BaseUnityPlugin
     {
         private const string MOD_NAME = "Late Join";
