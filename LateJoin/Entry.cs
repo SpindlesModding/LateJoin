@@ -38,7 +38,7 @@ namespace LateJoin
                 RemoveFromPhotonCache(photonView);
             }
             
-            orig.Invoke(self, _completedLevel, true, _changeLevelType);
+            orig.Invoke(self, _completedLevel, false, _changeLevelType);
             
             var canJoin = SemiFunc.RunIsLobbyMenu() || SemiFunc.RunIsShop() || SemiFunc.RunIsLobby(); 
             
