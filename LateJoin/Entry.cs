@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using BepInEx;
 using BepInEx.Logging;
 using ExitGames.Client.Photon;
@@ -17,6 +18,11 @@ namespace LateJoin
 
         internal static readonly ManualLogSource logger = BepInEx.Logging.Logger.CreateLogSource(MOD_NAME);
 
+        private static readonly Hashtable removeFilter = AccessTools.Field(typeof(PhotonNetwork), "removeFilter").GetValue(null) as Hashtable;
+        private static readonly object keyByteSeven = AccessTools.Field(typeof(PhotonNetwork), "keyByteSeven").GetValue(null);
+        private static readonly RaiseEventOptions serverCleanOptions = AccessTools.Field(typeof(PhotonNetwork), "ServerCleanOptions").GetValue(null) as RaiseEventOptions;
+        private static readonly MethodInfo raiseEventInternal = AccessTools.Method(typeof(PhotonNetwork), "RaiseEventInternal");
+        
         private static void RunManager_ChangeLevelHook(Action<RunManager, bool, bool, RunManager.ChangeLevelType> orig, RunManager self, bool _completedLevel, bool _levelFailed, RunManager.ChangeLevelType _changeLevelType)
         {
             if (_levelFailed || !PhotonNetwork.IsMasterClient)
@@ -70,13 +76,13 @@ namespace LateJoin
         {
             orig.Invoke(self);
 
-            if (!PhotonNetwork.IsMasterClient // !SemiFunc.RunIsShop())
+            if (!PhotonNetwork.IsMasterClient) // !SemiFunc.RunIsShop())
                 return;
             
             self.photonView.RPC("LoadingLevelAnimationCompletedRPC", RpcTarget.AllBuffered);
         }
         
-        private static void PlayerAvatar_OnDestroyHook(Action<PlayerAvatar> orig, PlayerAvatar self)
+        /*private static void PlayerAvatar_OnDestroyHook(Action<PlayerAvatar> orig, PlayerAvatar self)
         {
             orig.Invoke(self);
 
@@ -90,15 +96,10 @@ namespace LateJoin
                 
                 ClearPhotonCache(photonView);
             }
-        }
+        }*/
 
         private static void ClearPhotonCache(PhotonView photonView)
         {
-            var removeFilter = AccessTools.Field(typeof(PhotonNetwork), "removeFilter").GetValue(null) as Hashtable;
-            var keyByteSeven = AccessTools.Field(typeof(PhotonNetwork), "keyByteSeven").GetValue(null);
-            var serverCleanOptions = AccessTools.Field(typeof(PhotonNetwork), "ServerCleanOptions").GetValue(null) as RaiseEventOptions;
-            var raiseEventInternal = AccessTools.Method(typeof(PhotonNetwork), "RaiseEventInternal");
-            
             removeFilter![keyByteSeven] = photonView.InstantiationId;
             serverCleanOptions!.CachingOption = EventCaching.RemoveFromRoomCache;
             raiseEventInternal.Invoke(null, [(byte) 202, removeFilter, serverCleanOptions, SendOptions.SendReliable]);
@@ -118,8 +119,8 @@ namespace LateJoin
             logger.LogDebug("Hooking `PlayerAvatar.Start`");
             new Hook(AccessTools.Method(typeof(PlayerAvatar), "Start"), PlayerAvatar_StartHook);
             
-            logger.LogDebug("Hooking `PlayerAvatar.OnDestroy`");
-            new Hook(AccessTools.Method(typeof(PlayerAvatar), "OnDestroy"), PlayerAvatar_OnDestroyHook);
+            /*logger.LogDebug("Hooking `PlayerAvatar.OnDestroy`");
+            new Hook(AccessTools.Method(typeof(PlayerAvatar), "OnDestroy"), PlayerAvatar_OnDestroyHook);*/
         }
     }
 }
