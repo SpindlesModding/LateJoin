@@ -49,4 +49,8 @@
         <HintPath>$(GameAssemblyDir)\UnityEngine.dll</HintPath>
       </Reference>
     </ItemGroup>
+
+    <ItemGroup>
+      <None Include="LateJoin.csproj.user" />
+    </ItemGroup>
 </Project>
