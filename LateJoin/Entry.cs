@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Reflection;
 using BepInEx;
 using BepInEx.Logging;
 using ExitGames.Client.Photon;
@@ -11,17 +10,12 @@ using UnityEngine;
 
 namespace LateJoin
 {
-    [BepInPlugin("rebateman.latejoin", MOD_NAME, "0.1.0")]
+    [BepInPlugin("rebateman.latejoin", MOD_NAME, "0.1.1")]
     internal sealed class Entry : BaseUnityPlugin
     {
         private const string MOD_NAME = "Late Join";
 
         internal static readonly ManualLogSource logger = BepInEx.Logging.Logger.CreateLogSource(MOD_NAME);
-
-        private static readonly Hashtable removeFilter = AccessTools.Field(typeof(PhotonNetwork), "removeFilter").GetValue(null) as Hashtable;
-        private static readonly object keyByteSeven = AccessTools.Field(typeof(PhotonNetwork), "keyByteSeven").GetValue(null);
-        private static readonly RaiseEventOptions serverCleanOptions = AccessTools.Field(typeof(PhotonNetwork), "ServerCleanOptions").GetValue(null) as RaiseEventOptions;
-        private static readonly MethodInfo raiseEventInternal = AccessTools.Method(typeof(PhotonNetwork), "RaiseEventInternal");
         
         private static void RunManager_ChangeLevelHook(Action<RunManager, bool, bool, RunManager.ChangeLevelType> orig, RunManager self, bool _completedLevel, bool _levelFailed, RunManager.ChangeLevelType _changeLevelType)
         {
@@ -100,6 +94,11 @@ namespace LateJoin
 
         private static void ClearPhotonCache(PhotonView photonView)
         {
+            var removeFilter = AccessTools.Field(typeof(PhotonNetwork), "removeFilter").GetValue(null) as Hashtable;
+            var keyByteSeven = AccessTools.Field(typeof(PhotonNetwork), "keyByteSeven").GetValue(null);
+            var serverCleanOptions = AccessTools.Field(typeof(PhotonNetwork), "ServerCleanOptions").GetValue(null) as RaiseEventOptions;
+            var raiseEventInternal = AccessTools.Method(typeof(PhotonNetwork), "RaiseEventInternal");
+            
             removeFilter![keyByteSeven] = photonView.InstantiationId;
             serverCleanOptions!.CachingOption = EventCaching.RemoveFromRoomCache;
             raiseEventInternal.Invoke(null, [(byte) 202, removeFilter, serverCleanOptions, SendOptions.SendReliable]);
