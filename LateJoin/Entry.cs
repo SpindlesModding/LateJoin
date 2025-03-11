@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using BepInEx;
 using BepInEx.Logging;
 using ExitGames.Client.Photon;
@@ -7,6 +8,7 @@ using MonoMod.RuntimeDetour;
 using Photon.Pun;
 using Photon.Realtime;
 using UnityEngine;
+using Hashtable = System.Collections.Hashtable;
 
 namespace LateJoin
 {
@@ -16,6 +18,11 @@ namespace LateJoin
         private const string MOD_NAME = "Late Join";
 
         internal static readonly ManualLogSource logger = BepInEx.Logging.Logger.CreateLogSource(MOD_NAME);
+        
+        internal static readonly FieldInfo removeFilterFieldInfo = AccessTools.Field(typeof(PhotonNetwork), "removeFilter");
+        internal static readonly FieldInfo keyByteSevenFieldInfo = AccessTools.Field(typeof(PhotonNetwork), "keyByteSeven");
+        internal static readonly FieldInfo serverCleanOptionsFieldInfo = AccessTools.Field(typeof(PhotonNetwork), "ServerCleanOptions");
+        internal static readonly MethodInfo raiseEventInternalMethodInfo = AccessTools.Method(typeof(PhotonNetwork), "RaiseEventInternal");
         
         private static void RunManager_ChangeLevelHook(Action<RunManager, bool, bool, RunManager.ChangeLevelType> orig, RunManager self, bool _completedLevel, bool _levelFailed, RunManager.ChangeLevelType _changeLevelType)
         {
@@ -94,14 +101,13 @@ namespace LateJoin
 
         private static void ClearPhotonCache(PhotonView photonView)
         {
-            var removeFilter = AccessTools.Field(typeof(PhotonNetwork), "removeFilter").GetValue(null) as Hashtable;
-            var keyByteSeven = AccessTools.Field(typeof(PhotonNetwork), "keyByteSeven").GetValue(null);
-            var serverCleanOptions = AccessTools.Field(typeof(PhotonNetwork), "ServerCleanOptions").GetValue(null) as RaiseEventOptions;
-            var raiseEventInternal = AccessTools.Method(typeof(PhotonNetwork), "RaiseEventInternal");
+            var removeFilter = removeFilterFieldInfo.GetValue(null) as Hashtable;
+            var keyByteSeven = keyByteSevenFieldInfo.GetValue(null);
+            var serverCleanOptions = serverCleanOptionsFieldInfo.GetValue(null) as RaiseEventOptions;
             
             removeFilter![keyByteSeven] = photonView.InstantiationId;
             serverCleanOptions!.CachingOption = EventCaching.RemoveFromRoomCache;
-            raiseEventInternal.Invoke(null, [(byte) 202, removeFilter, serverCleanOptions, SendOptions.SendReliable]);
+            raiseEventInternalMethodInfo.Invoke(null, [(byte) 202, removeFilter, serverCleanOptions, SendOptions.SendReliable]);
         }
         
         private void Awake()
