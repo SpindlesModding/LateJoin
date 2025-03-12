@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace LateJoin
 {
-    [BepInPlugin("rebateman.latejoin", MOD_NAME, "0.1.1")]
+    [BepInPlugin("rebateman.latejoin", MOD_NAME, "0.1.2")]
     internal sealed class Entry : BaseUnityPlugin
     {
         private const string MOD_NAME = "Late Join";
@@ -60,7 +60,7 @@ namespace LateJoin
         
         private static void LevelGenerator_StartHook(Action<LevelGenerator> orig, LevelGenerator self)
         {
-            if (PhotonNetwork.IsMasterClient || SemiFunc.RunIsLobby()) // SemiFunc.RunIsShop()
+            if (PhotonNetwork.IsMasterClient && SemiFunc.RunIsShop() || SemiFunc.RunIsLobby())
                 PhotonNetwork.RemoveBufferedRPCs(self.PhotonView.ViewID);
             
             orig.Invoke(self);
@@ -70,13 +70,13 @@ namespace LateJoin
         {
             orig.Invoke(self);
 
-            if (!PhotonNetwork.IsMasterClient) // !SemiFunc.RunIsShop())
+            if (!PhotonNetwork.IsMasterClient && !SemiFunc.RunIsLobby() || !SemiFunc.RunIsShop())
                 return;
             
             self.photonView.RPC("LoadingLevelAnimationCompletedRPC", RpcTarget.AllBuffered);
         }
         
-        /*private static void PlayerAvatar_OnDestroyHook(Action<PlayerAvatar> orig, PlayerAvatar self)
+        /* private static void PlayerAvatar_OnDestroyHook(Action<PlayerAvatar> orig, PlayerAvatar self)
         {
             orig.Invoke(self);
 
@@ -118,8 +118,11 @@ namespace LateJoin
             logger.LogDebug("Hooking `PlayerAvatar.Start`");
             new Hook(AccessTools.Method(typeof(PlayerAvatar), "Start"), PlayerAvatar_StartHook);
             
-            /*logger.LogDebug("Hooking `PlayerAvatar.OnDestroy`");
-            new Hook(AccessTools.Method(typeof(PlayerAvatar), "OnDestroy"), PlayerAvatar_OnDestroyHook);*/
+            // Since we're not currently loading anything but the shop,
+            // hooks below are unnecessary at the moment.
+            
+            /* logger.LogDebug("Hooking `PlayerAvatar.OnDestroy`");
+            new Hook(AccessTools.Method(typeof(PlayerAvatar), "OnDestroy"), PlayerAvatar_OnDestroyHook); */
         }
     }
 }
