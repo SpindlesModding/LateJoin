@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using BepInEx;
 using BepInEx.Logging;
 using ExitGames.Client.Photon;
@@ -16,6 +17,11 @@ namespace LateJoin
         private const string MOD_NAME = "Late Join";
 
         internal static readonly ManualLogSource logger = BepInEx.Logging.Logger.CreateLogSource(MOD_NAME);
+        
+        private static readonly FieldInfo removeFilterFieldInfo = AccessTools.Field(typeof(PhotonNetwork), "removeFilter");
+        private static readonly FieldInfo keyByteSevenFieldInfo = AccessTools.Field(typeof(PhotonNetwork), "keyByteSeven");
+        private static readonly FieldInfo serverCleanOptionsFieldInfo = AccessTools.Field(typeof(PhotonNetwork), "ServerCleanOptions");
+        private static readonly MethodInfo raiseEventInternalMethodInfo = AccessTools.Method(typeof(PhotonNetwork), "RaiseEventInternal");
         
         private static void RunManager_ChangeLevelHook(Action<RunManager, bool, bool, RunManager.ChangeLevelType> orig, RunManager self, bool _completedLevel, bool _levelFailed, RunManager.ChangeLevelType _changeLevelType)
         {
@@ -75,33 +81,16 @@ namespace LateJoin
             
             self.photonView.RPC("LoadingLevelAnimationCompletedRPC", RpcTarget.AllBuffered);
         }
-        
-        /* private static void PlayerAvatar_OnDestroyHook(Action<PlayerAvatar> orig, PlayerAvatar self)
-        {
-            orig.Invoke(self);
-
-            if (!PhotonNetwork.IsMasterClient || !SemiFunc.RunIsLobby()) // && !SemiFunc.RunIsShop()
-                return;
-            
-            foreach (var photonView in FindObjectsOfType<PhotonView>())
-            {
-                if (photonView?.transform.parent && photonView.transform.parent.name is not "Enemies")
-                    continue;
-                
-                ClearPhotonCache(photonView);
-            }
-        }*/
 
         private static void ClearPhotonCache(PhotonView photonView)
         {
-            var removeFilter = AccessTools.Field(typeof(PhotonNetwork), "removeFilter").GetValue(null) as Hashtable;
-            var keyByteSeven = AccessTools.Field(typeof(PhotonNetwork), "keyByteSeven").GetValue(null);
-            var serverCleanOptions = AccessTools.Field(typeof(PhotonNetwork), "ServerCleanOptions").GetValue(null) as RaiseEventOptions;
-            var raiseEventInternal = AccessTools.Method(typeof(PhotonNetwork), "RaiseEventInternal");
+            var removeFilter = removeFilterFieldInfo.GetValue(null) as Hashtable;
+            var keyByteSeven = keyByteSevenFieldInfo.GetValue(null);
+            var serverCleanOptions = serverCleanOptionsFieldInfo.GetValue(null) as RaiseEventOptions;
             
             removeFilter![keyByteSeven] = photonView.InstantiationId;
             serverCleanOptions!.CachingOption = EventCaching.RemoveFromRoomCache;
-            raiseEventInternal.Invoke(null, [(byte) 202, removeFilter, serverCleanOptions, SendOptions.SendReliable]);
+            raiseEventInternalMethodInfo.Invoke(null, [(byte) 202, removeFilter, serverCleanOptions, SendOptions.SendReliable]);
         }
         
         private void Awake()
@@ -126,3 +115,23 @@ namespace LateJoin
         }
     }
 }
+
+
+
+
+
+/* private static void PlayerAvatar_OnDestroyHook(Action<PlayerAvatar> orig, PlayerAvatar self)
+        {
+            orig.Invoke(self);
+
+            if (!PhotonNetwork.IsMasterClient || !SemiFunc.RunIsLobby()) // && !SemiFunc.RunIsShop()
+                return;
+
+            foreach (var photonView in FindObjectsOfType<PhotonView>())
+            {
+                if (photonView?.transform.parent && photonView.transform.parent.name is not "Enemies")
+                    continue;
+
+                ClearPhotonCache(photonView);
+            }
+        }*/
