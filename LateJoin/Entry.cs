@@ -11,10 +11,10 @@ using UnityEngine;
 
 namespace LateJoin
 {
-    [BepInPlugin("rebateman.latejoin", MOD_NAME, "0.1.2")]
+    [BepInPlugin("spindles.privatelatejoin", MOD_NAME, "0.1.3")]
     internal sealed class Entry : BaseUnityPlugin
     {
-        private const string MOD_NAME = "Late Join";
+        private const string MOD_NAME = "Private Late Join";
 
         internal static readonly ManualLogSource logger = BepInEx.Logging.Logger.CreateLogSource(MOD_NAME);
         
@@ -49,7 +49,7 @@ namespace LateJoin
             var canJoin = SemiFunc.RunIsLobbyMenu() || SemiFunc.RunIsLobby(); // SemiFunc.RunIsShop()
             
             if (canJoin)
-                SteamManager.instance.UnlockLobby();
+                SteamManager.instance.UnlockLobby(false);
             else
                 SteamManager.instance.LockLobby();
             
