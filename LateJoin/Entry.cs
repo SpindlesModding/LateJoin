@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace LateJoin
 {
-    [BepInPlugin("spindles.privatelatejoin", MOD_NAME, "0.1.3")]
+    [BepInPlugin("spindles.privatelatejoin", MOD_NAME, "0.1.4")]
     internal sealed class Entry : BaseUnityPlugin
     {
         private const string MOD_NAME = "Private Late Join";
@@ -47,9 +47,14 @@ namespace LateJoin
             orig.Invoke(self, _completedLevel, false, _changeLevelType);
             
             var canJoin = SemiFunc.RunIsLobbyMenu() || SemiFunc.RunIsLobby(); // SemiFunc.RunIsShop()
-            
-            if (canJoin)
-                SteamManager.instance.UnlockLobby(false);
+
+			if (canJoin) 
+			{
+				if (typeof(SteamManager).GetRuntimeMethod("UnlockLobby", [typeof(bool)]) != null)
+					typeof(SteamManager).GetRuntimeMethod("UnlockLobby", [typeof(bool)]).Invoke(SteamManager.instance, [true]);
+				else
+					typeof(SteamManager).GetRuntimeMethod("UnlockLobby", [])?.Invoke(SteamManager.instance, []);
+			}
             else
                 SteamManager.instance.LockLobby();
             
@@ -95,7 +100,7 @@ namespace LateJoin
         
         private void Awake()
         {
-            logger.LogDebug("Hooking `RunManager.ChangeLevel`");
+			logger.LogDebug("Hooking `RunManager.ChangeLevel`");
             new Hook(AccessTools.Method(typeof(RunManager), "ChangeLevel"), RunManager_ChangeLevelHook);
             
             logger.LogDebug("Hooking `PlayerAvatar.Spawn`");

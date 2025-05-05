@@ -1,3 +1,7 @@
+## 0.1.4
+### Fixed
+- Stable REPO support
+
 ## 0.1.3
 ### Fixed
 - Issue where it wouldn't unlock lobby causing player to not be able to host a game

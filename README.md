@@ -1,3 +1,9 @@
+# PrivateLateJoin
+This is a slightly modified version of LateJoin to add support to beta version, reopens the lobby as private.
+
+## Possible Future Improvements
+- Support both private and public
+
 # LateJoin
 Have you ever played R.E.P.O. only to be faced with a friend who wants to join after you've started the lobby? Fret not!
 
