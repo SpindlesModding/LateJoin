@@ -9,14 +9,15 @@ using Photon.Pun;
 using Photon.Realtime;
 using UnityEngine;
 
-namespace LateJoin
-{
-    [BepInPlugin("spindles.privatelatejoin", MOD_NAME, "0.1.4")]
-    internal sealed class Entry : BaseUnityPlugin
-    {
-        private const string MOD_NAME = "Private Late Join";
+namespace LateJoin {
+	[BepInPlugin(modNamespace, modName, modVersion)]
+	public class Entry : BaseUnityPlugin 
+	{
+		public const string modNamespace = "dev.spindles.repo.privatelatejoin";
+		public const string modName = "Private Late Join";
+		public const string modVersion = "0.1.5b2";
 
-        internal static readonly ManualLogSource logger = BepInEx.Logging.Logger.CreateLogSource(MOD_NAME);
+		internal static readonly ManualLogSource logger = BepInEx.Logging.Logger.CreateLogSource(modName);
         
         private static readonly FieldInfo removeFilterFieldInfo = AccessTools.Field(typeof(PhotonNetwork), "removeFilter");
         private static readonly FieldInfo keyByteSevenFieldInfo = AccessTools.Field(typeof(PhotonNetwork), "keyByteSeven");

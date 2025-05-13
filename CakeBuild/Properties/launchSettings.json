@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "CakeBuild": {
+      "commandName": "Project",
+      "workingDirectory": "."
+    }
+  }
+}
