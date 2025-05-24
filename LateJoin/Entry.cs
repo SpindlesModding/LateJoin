@@ -14,7 +14,7 @@ namespace PrivateLateJoin {
 	public class Entry : BaseUnityPlugin {
 		public const string modNamespace = "dev.spindles.repo.privatelatejoin";
 		public const string modName = "Private Late Join";
-		public const string modVersion = "0.1.5";
+		public const string modVersion = "0.1.6";
 
 		internal static readonly ManualLogSource logger = BepInEx.Logging.Logger.CreateLogSource(modName);
 

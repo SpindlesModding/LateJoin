@@ -1,6 +1,6 @@
 ## 0.1.6
-### Fixed
-- Voice chat when joining in late?
+### Fix
+- Fixed mistake with changelog having unreleased future changelog included 
 
 ## 0.1.5
 ### Changed

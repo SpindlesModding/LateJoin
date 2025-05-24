@@ -1,6 +1,6 @@
 {
 	"name": "PrivateLateJoin",
-	"version_number": "0.1.5",
+	"version_number": "0.1.6",
 	"website_url": "https://github.com/SpindlesModding/LateJoin",
 	"description": "(Beta Compatible) This is a fork of LateJoin to fix beta and stable compatibility. Faced with friends that want to join an active game? Gone are the days of closing and re-opening your lobby! Just invite your friends after you've shopped!",
 	"dependencies": [
