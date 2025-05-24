@@ -44,7 +44,7 @@ namespace CakeBuild {
 	[TaskName("ValidateManifest")]
 	public sealed class ValidateManifestTask : FrostingTask<BuildContext> {
 		public override void Run(BuildContext context) {
-			if (context.Version != LateJoin.Entry.modVersion)
+			if (context.Version != PrivateLateJoin.Entry.modVersion)
 				throw new Exception("Version for manifest and mod info does not match! Refusing to build");
 		}
 	}
