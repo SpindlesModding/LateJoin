@@ -2,8 +2,8 @@
 
     <!-- BepInEx Properties -->
     <PropertyGroup>
-        <AssemblyName>LateJoin</AssemblyName>
-        <Product>LateJoin</Product>
+        <AssemblyName>PrivateLateJoin</AssemblyName>
+        <Product>PrivateLateJoin</Product>
         <ProjectDepsFileName>$(MSBuildProjectName).deps.json</ProjectDepsFileName>
         <!-- Change to whatever version you're currently on. -->
         <Version>0.1.1</Version>
@@ -12,7 +12,7 @@
     <!-- Project Properties -->
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
-        <RootNamespace>LateJoin</RootNamespace>
+        <RootNamespace>PrivateLateJoin</RootNamespace>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
     </PropertyGroup>

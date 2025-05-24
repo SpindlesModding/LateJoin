@@ -1,3 +1,11 @@
+## 0.1.6
+### Fixed
+- Voice chat when joining in late?
+
+## 0.1.5
+### Changed
+- Moved to patching original mod to avoid issues
+
 ## 0.1.4
 ### Fixed
 - Stable REPO support

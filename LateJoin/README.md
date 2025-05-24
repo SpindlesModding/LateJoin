@@ -1,10 +1,10 @@
 # PrivateLateJoin
-This is a slightly modified version of LateJoin to add support to beta version, reopens the lobby as private.
+This is a fork of [LateJoin](https://thunderstore.io/c/repo/p/Rebateman/LateJoin/) to add support to beta branch, it reopens the lobby as private to allow late join
 
 ## Possible Future Improvements
 - Support both private and public
 
-# LateJoin
+# [LateJoin](https://thunderstore.io/c/repo/p/Rebateman/LateJoin/)
 Have you ever played R.E.P.O. only to be faced with a friend who wants to join after you've started the lobby? Fret not!
 
 ## How can players late join currently?
@@ -20,7 +20,7 @@ The game treats the host as the "master client" which dictates players and how t
 **Therefore, be warned, this mod may not be fully compatible with other mods, especially ones that rely on important data that is handled by the client, rather than the master client!**
 
 
-## Credits
+## Original Credits
 - **nickklmao** for developing the mod
 - **felinusfish** for testing and debugging
 - **CharlesE2** for help with development
